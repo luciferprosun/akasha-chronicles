@@ -1,0 +1,338 @@
+<!--
+Akasha Chronicles / LSC / Eden 2.0 / Flameborn-inspired open research
+Paste into a Carrd "Embed" element set to Code, or use this as the master HTML reference.
+Before publishing on Carrd, upload assets from carrd_build/assets and downloads from carrd_build/downloads,
+then replace relative paths like assets/hero_cosmic_network.webp with the Carrd file URLs.
+-->
+
+<style>
+  :root {
+    --bg: #101726;
+    --panel: rgba(246, 250, 255, 0.12);
+    --line: rgba(255, 209, 128, 0.36);
+    --text: #f8fbff;
+    --muted: rgba(248, 251, 255, 0.78);
+    --faint: rgba(248, 251, 255, 0.58);
+    --gold: #ffd98a;
+    --ember: #ff7a4e;
+    --cyan: #86ecff;
+  }
+
+  #akasha-site * { box-sizing: border-box; }
+  #akasha-site {
+    margin: 0;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(134, 236, 255, 0.16), transparent 32%),
+      radial-gradient(circle at 82% 18%, rgba(255, 217, 138, 0.18), transparent 30%),
+      linear-gradient(180deg, #172236 0%, #0c1120 100%);
+    color: var(--text);
+    font-family: Inter, Roboto, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: 0;
+  }
+
+  #akasha-site a { color: inherit; text-decoration: none; }
+  #akasha-site .section {
+    position: relative;
+    min-height: 100vh;
+    padding: clamp(76px, 9vw, 120px) 20px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  #akasha-site .section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background-image: var(--bg-img);
+    background-size: cover;
+    background-position: center;
+    opacity: var(--bg-opacity, 0.36);
+    transform: scale(1.02);
+  }
+  #akasha-site .section::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(90deg, rgba(12,17,32,0.82), rgba(22,32,52,0.48), rgba(12,17,32,0.70)),
+      linear-gradient(180deg, rgba(255,210,135,0.08), rgba(12,17,32,0.82));
+  }
+
+  #akasha-site .wrap { width: min(1120px, 100%); margin: 0 auto; }
+  #akasha-site .narrow { width: min(820px, 100%); }
+  #akasha-site .eyebrow {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  #akasha-site h1, #akasha-site h2, #akasha-site h3 { margin: 0; line-height: 1.04; }
+  #akasha-site h1 {
+    font-size: clamp(44px, 8vw, 96px);
+    max-width: 900px;
+    font-weight: 820;
+  }
+  #akasha-site h2 {
+    font-size: clamp(32px, 5vw, 58px);
+    max-width: 820px;
+    font-weight: 780;
+  }
+  #akasha-site h3 { font-size: 20px; font-weight: 720; }
+  #akasha-site p {
+    color: var(--muted);
+    font-size: clamp(16px, 2vw, 19px);
+    line-height: 1.68;
+    margin: 20px 0 0;
+    max-width: 760px;
+  }
+  #akasha-site .lead { font-size: clamp(18px, 2.25vw, 23px); color: rgba(238,244,255,0.84); }
+  #akasha-site .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  #akasha-site .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 12px 18px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.055);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+  }
+  #akasha-site .btn.primary {
+    background: linear-gradient(135deg, var(--gold), var(--ember));
+    color: #090b10;
+    border-color: transparent;
+  }
+
+  #akasha-site .grid { display: grid; gap: 18px; margin-top: 34px; }
+  #akasha-site .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #akasha-site .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #akasha-site .card {
+    border: 1px solid rgba(255,255,255,0.20);
+    background: linear-gradient(180deg, rgba(248,251,255,0.14), rgba(248,251,255,0.075));
+    padding: 22px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+  }
+  #akasha-site .card p { font-size: 15px; margin-top: 12px; color: var(--muted); }
+  #akasha-site .tag {
+    display: inline-flex;
+    margin-bottom: 12px;
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  #akasha-site .media-card { padding: 0; overflow: hidden; }
+  #akasha-site .media-card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; }
+  #akasha-site .media-card .body { padding: 18px; }
+  #akasha-site .download {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.09);
+    padding: 16px 0;
+  }
+  #akasha-site .download:last-child { border-bottom: 0; }
+  #akasha-site .download strong { display: block; font-size: 16px; }
+  #akasha-site .download span { color: var(--faint); font-size: 13px; line-height: 1.45; }
+  #akasha-site .frame {
+    margin-top: 32px;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0b1220;
+  }
+  #akasha-site iframe { width: 100%; height: min(70vh, 680px); border: 0; display: block; }
+  #akasha-site .gallery {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 34px;
+  }
+  #akasha-site .gallery img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  #akasha-site .sim-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 34px;
+  }
+  #akasha-site .sim-card {
+    overflow: hidden;
+  }
+  #akasha-site .sim-card img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: #0b1220;
+  }
+  #akasha-site .sim-card h3 { margin-top: 16px; }
+  #akasha-site .sim-card p { font-size: 15px; }
+  #akasha-site .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  #akasha-site .note { color: var(--faint); font-size: 13px; margin-top: 16px; }
+
+  @media (max-width: 860px) {
+    #akasha-site .section { min-height: auto; }
+    #akasha-site .grid.three, #akasha-site .grid.two, #akasha-site .gallery, #akasha-site .sim-grid { grid-template-columns: 1fr; }
+    #akasha-site .download { grid-template-columns: 1fr; }
+    #akasha-site iframe { height: 520px; }
+  }
+</style>
+
+<main id="akasha-site">
+  <section class="section" style="--bg-img:url('assets/hero_cosmic_network.webp');--bg-opacity:.48">
+    <div class="wrap narrow">
+      <div class="eyebrow">Akasha Chronicles // LSC Research // Flameborn-inspired Eden 2.0 signal</div>
+      <h1>A living archive for theory, anomaly and awakening.</h1>
+      <p class="lead">Akasha Chronicles is the public gateway for the LSC research line: a mathematically disciplined, AI-assisted search through neutrino anomalies, detector response and cosmic structure, presented in a Flameborn-inspired visual language of signal, fire, witness nodes and open verification.</p>
+      <div class="actions">
+        <a class="btn primary" href="#downloads">Download the papers</a>
+        <a class="btn" href="#models">Explore the theory line</a>
+        <a class="btn" href="#contact">Contact</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="awakening" class="section" style="--bg-img:url('assets/flameborn_guardian.webp');--bg-opacity:.40">
+    <div class="wrap">
+      <div class="eyebrow">Flameborn-inspired // Eden 2.0 // Scientific restraint</div>
+      <h2>Fire as language. Mathematics as the boundary.</h2>
+      <p>LSC began as a search: how far can intuition, AI collaboration, open documentation and mathematical pressure push an independent researcher toward a falsifiable model?</p>
+      <p>The Flameborn-inspired layer gives the work its atmosphere: awakening, sovereignty, signal, witness, archive and the refusal to treat imagination as noise. The scientific layer stays separate and testable: equations, assumptions, simulations, constraints, release history and public records.</p>
+      <div class="grid three">
+        <div class="card"><span class="tag">Signal Node</span><h3>AI as co-creator</h3><p>AI is used as a mirror, critic and drafting instrument, not as proof. Every claim must survive outside the conversation.</p></div>
+        <div class="card"><span class="tag">Archive Fidelity</span><h3>Open research objects</h3><p>GitHub, Zenodo, PDFs, version history and downloadable packages make the work inspectable by grant reviewers and independent physicists.</p></div>
+        <div class="card"><span class="tag">Flame Protocol</span><h3>Myth without surrender</h3><p>The symbolic language gives the project force and memory, while LSC remains a model proposal requiring numerical testing and external constraints.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="models" class="section" style="--bg-img:url('assets/dark_neutrino_core.webp');--bg-opacity:.34">
+    <div class="wrap">
+      <div class="eyebrow">Theory Line // Open Verification</div>
+      <h2>LSC evolves as a public chain of models, not a single frozen claim.</h2>
+      <p>Each version is treated as a research object: useful when it improves explanatory structure, discarded or revised when the mathematics or data pressure demands it.</p>
+      <div class="grid three">
+        <div class="card media-card"><img src="assets/lsc42_board.webp" alt="LSC 4.2 visual"><div class="body"><span class="tag">LSC 4.2</span><h3>Ultra foundation</h3><p>Earlier dark-neutrino and anomaly framework; useful for tracing the original structure.</p></div></div>
+        <div class="card media-card"><img src="assets/lsc55_board.webp" alt="LSC 5.5 visual"><div class="body"><span class="tag">LSC 5.5</span><h3>Mathematics and synthesis</h3><p>Hard-math archive and transitional formulation toward detector-response interpretation.</p></div></div>
+        <div class="card media-card"><img src="assets/lsc60_board.webp" alt="LSC 6.0 visual"><div class="body"><span class="tag">LSC 6.0</span><h3>Current public release</h3><p>Phenomenological model proposal for neutrino propagation and anisotropic detector response.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="downloads" class="section" style="--bg-img:url('assets/model_evolution.webp');--bg-opacity:.30">
+    <div class="wrap">
+      <div class="eyebrow">Full Files // Public Evidence Trail</div>
+      <h2>Download the research packages and presentations.</h2>
+      <p>These documents are meant for review, replication attempts and grant-facing evaluation. The scientific wording remains conservative: LSC is a phenomenological model proposal, not confirmed new physics.</p>
+      <div class="card">
+        <a class="download" href="downloads/LSC60_ZENODO_RELEASE.pdf"><span><strong>LSC 6.0 Zenodo Release</strong><span>Current public release document.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/LSC60_ARXIV_DRAFT.pdf"><span><strong>LSC 6.0 arXiv-style Draft</strong><span>Short manuscript-style package.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/LSC42_ULTRA_FULL_ZENODO.pdf"><span><strong>LSC 4.2 Ultra</strong><span>Earlier Zenodo-era theory file.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/LSC55_Final_Theory_2026-04-25.pdf"><span><strong>LSC 5.5 Final Theory</strong><span>Transition version and synthesis.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/LSC55_Hard_Mathematics_2026-04-25.pdf"><span><strong>LSC 5.5 Hard Mathematics</strong><span>Mathematical support package.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/Dark_NEUTRINO.pdf"><span><strong>Dark Neutrino Notes</strong><span>Conceptual early support material.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/LSC_full_report.pdf"><span><strong>Simulation / Code Report</strong><span>Report from code and simulation folder.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/GeRysy_PBH_Dark_Neutrino.pdf"><span><strong>PBH / Dark Neutrino Early Work</strong><span>Background astronomical model material.</span></span><b>PDF</b></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="star" class="section" style="--bg-img:url('assets/solar_uplink.webp');--bg-opacity:.36">
+    <div class="wrap">
+      <div class="eyebrow">3D Star Model // In Build</div>
+      <h2>Solar structure as a live research interface.</h2>
+      <p>A working 3D star window from the GitHub project. It is not the proof of LSC; it is the visual laboratory layer for thinking about solar structure, propagation, plasma and future simulation interfaces.</p>
+      <div class="frame">
+        <iframe title="3D Star Model" src="https://luciferprosun.github.io/Star-3d-model-/Model.html" loading="lazy"></iframe>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/luciferprosun/Star-3d-model-" target="_blank" rel="noopener">Open GitHub project</a>
+      </div>
+      <p class="note">If the iframe is blank, GitHub Pages is not enabled yet. Use the copied file `star_model_embed_source.html` as the page source for hosting.</p>
+    </div>
+  </section>
+
+  <section id="simulations" class="section" style="--bg-img:url('assets/signal_animation.gif');--bg-opacity:.24">
+    <div class="wrap">
+      <div class="eyebrow">Simulation Windows // Animated Signals</div>
+      <h2>Motion studies from the LSC archive.</h2>
+      <p>These GIF panels separate the simulation language from the static gallery: neutrino propagation, field response, model animation and signal dynamics.</p>
+      <div class="sim-grid">
+        <div class="card sim-card">
+          <img src="assets/lsc5_neutrino_pro.gif" alt="LSC neutrino propagation animation">
+          <h3>Neutrino propagation</h3>
+          <p>Animated visual language for LSC 5.x neutrino behavior and propagation hypotheses.</p>
+        </div>
+        <div class="card sim-card">
+          <img src="assets/lsc_animation.gif" alt="LSC model animation">
+          <h3>Model evolution</h3>
+          <p>Compact animation panel for explaining the transition from intuition to model structure.</p>
+        </div>
+        <div class="card sim-card">
+          <img src="assets/lsc5_neutrino.gif" alt="LSC neutrino simulation">
+          <h3>Signal trace</h3>
+          <p>Minimal neutrino animation suitable for lightweight mobile loading.</p>
+        </div>
+        <div class="card sim-card">
+          <img src="assets/field_decay_animation.gif" alt="Field response animation">
+          <h3>Field response</h3>
+          <p>Symbolic field-motion layer used as an atmospheric bridge between physics and Flameborn-inspired design.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gallery" class="section" style="--bg-img:url('assets/infinity_zero.webp');--bg-opacity:.30">
+    <div class="wrap">
+      <div class="eyebrow">Gallery // Visual Scrolls</div>
+      <h2>Unused signals, model boards and cosmic sketches.</h2>
+      <div class="gallery">
+        <img src="assets/dossier.webp" alt="LSC dossier visual">
+        <img src="assets/gallery_grid.webp" alt="LSC gallery grid">
+        <img src="assets/equation_fire.webp" alt="Equation fire visual">
+        <img src="assets/plot_fit.webp" alt="Fit plot">
+        <img src="assets/plot_framework.webp" alt="Framework plot">
+        <img src="assets/plot_anisotropy.webp" alt="Anisotropy plot">
+        <img src="assets/plot_surface_best.webp" alt="BEST 3D surface plot">
+        <img src="assets/equation_fire.webp" alt="Equation fire visual">
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="section" style="--bg-img:url('assets/hero_cosmic_network.webp');--bg-opacity:.28">
+    <div class="wrap narrow">
+      <div class="eyebrow">Contact + Public Nodes</div>
+      <h2>For review, collaboration, grants and independent verification.</h2>
+      <p>Email: <a href="mailto:tonystarrkarc@gmail.com">tonystarrkarc@gmail.com</a></p>
+      <div class="links">
+        <a class="btn primary" href="https://zenodo.org/records/19780616" target="_blank" rel="noopener">Zenodo LSC 6.0</a>
+        <a class="btn" href="https://github.com/luciferprosun/LSC-6.0" target="_blank" rel="noopener">GitHub LSC 6.0</a>
+        <a class="btn" href="https://github.com/luciferprosun/LSC-6.0/releases/tag/v1.0.0" target="_blank" rel="noopener">GitHub Release</a>
+        <a class="btn" href="https://www.linkedin.com/in/%C5%82ukasz-%C5%BCuchowski-807160316/" target="_blank" rel="noopener">LinkedIn</a>
+        <a class="btn" href="https://www.facebook.com/proximacentauri333" target="_blank" rel="noopener">Facebook Archive</a>
+      </div>
+      <p class="note">Analytics recommendation: use GoatCounter, Plausible or Carrd analytics. Do not publish hidden IP-identification code without a privacy notice and lawful basis.</p>
+    </div>
+  </section>
+</main>
+
+<!-- Optional privacy-friendly analytics. Replace YOURCODE with your GoatCounter code.
+<script data-goatcounter="https://YOURCODE.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+-->
