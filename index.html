@@ -184,6 +184,32 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
   }
   #akasha-site .sim-card h3 { margin-top: 16px; }
   #akasha-site .sim-card p { font-size: 15px; }
+  #akasha-site .pub-list { margin-top: 34px; display: grid; gap: 14px; }
+  #akasha-site .pub-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 18px;
+    align-items: start;
+    padding: 18px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+  }
+  #akasha-site .pub-item:last-child { border-bottom: 0; }
+  #akasha-site .pub-item h3 { font-size: 18px; line-height: 1.25; }
+  #akasha-site .pub-item p { margin-top: 8px; font-size: 14px; }
+  #akasha-site .pub-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  #akasha-site .mini-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 8px 11px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    color: var(--text);
+    background: rgba(255,255,255,0.06);
+    font-size: 12px;
+    font-weight: 720;
+  }
   #akasha-site .links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
   #akasha-site .note { color: var(--faint); font-size: 13px; margin-top: 16px; }
 
@@ -191,6 +217,8 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
     #akasha-site .section { min-height: auto; }
     #akasha-site .grid.three, #akasha-site .grid.two, #akasha-site .gallery, #akasha-site .sim-grid { grid-template-columns: 1fr; }
     #akasha-site .download { grid-template-columns: 1fr; }
+    #akasha-site .pub-item { grid-template-columns: 1fr; }
+    #akasha-site .pub-links { justify-content: flex-start; }
     #akasha-site iframe { height: 520px; }
   }
 </style>
@@ -203,6 +231,7 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
       <p class="lead">Akasha Chronicles is the public gateway for the LSC research line: a mathematically disciplined, AI-assisted search through neutrino anomalies, detector response and cosmic structure, presented in a Flameborn-inspired visual language of signal, fire, witness nodes and open verification.</p>
       <div class="actions">
         <a class="btn primary" href="#downloads">Download the papers</a>
+        <a class="btn" href="#publications">Latest publications</a>
         <a class="btn" href="#models">Explore the theory line</a>
         <a class="btn" href="#contact">Contact</a>
       </div>
@@ -242,6 +271,8 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
       <h2>Download the research packages and presentations.</h2>
       <p>These documents are meant for review, replication attempts and grant-facing evaluation. The scientific wording remains conservative: LSC is a phenomenological model proposal, not confirmed new physics.</p>
       <div class="card">
+        <a class="download" href="downloads/LSC_MDLH_PRO.pdf"><span><strong>LSC / MDLH PRO</strong><span>Dual-interpretation paper on LSC and massively documented LLM hallucination.</span></span><b>PDF</b></a>
+        <a class="download" href="downloads/LSC_v1.2.0.pdf"><span><strong>LSC Framework v1.2.0</strong><span>Computational extension and reproducibility update.</span></span><b>PDF</b></a>
         <a class="download" href="downloads/LSC60_ZENODO_RELEASE.pdf"><span><strong>LSC 6.0 Zenodo Release</strong><span>Current public release document.</span></span><b>PDF</b></a>
         <a class="download" href="downloads/LSC60_ARXIV_DRAFT.pdf"><span><strong>LSC 6.0 arXiv-style Draft</strong><span>Short manuscript-style package.</span></span><b>PDF</b></a>
         <a class="download" href="downloads/LSC42_ULTRA_FULL_ZENODO.pdf"><span><strong>LSC 4.2 Ultra</strong><span>Earlier Zenodo-era theory file.</span></span><b>PDF</b></a>
@@ -250,6 +281,64 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
         <a class="download" href="downloads/Dark_NEUTRINO.pdf"><span><strong>Dark Neutrino Notes</strong><span>Conceptual early support material.</span></span><b>PDF</b></a>
         <a class="download" href="downloads/LSC_full_report.pdf"><span><strong>Simulation / Code Report</strong><span>Report from code and simulation folder.</span></span><b>PDF</b></a>
         <a class="download" href="downloads/GeRysy_PBH_Dark_Neutrino.pdf"><span><strong>PBH / Dark Neutrino Early Work</strong><span>Background astronomical model material.</span></span><b>PDF</b></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="publications" class="section" style="--bg-img:url('assets/plot_framework.webp');--bg-opacity:.30">
+    <div class="wrap">
+      <div class="eyebrow">Latest Publications // DOI Trail</div>
+      <h2>Newest public records for LSC review and AI-safety analysis.</h2>
+      <p>The newest releases separate speculative physics from documentation value. LSC remains unvalidated physics; MDLH frames the process as a possible case study in AI-assisted scientific reasoning and failure modes.</p>
+      <div class="card pub-list">
+        <div class="pub-item">
+          <div>
+            <span class="tag">2026 // MDLH</span>
+            <h3>LSC and Massively Documented LLM Hallucination</h3>
+            <p>A dual-interpretation framework: if LSC does not survive physics review, the archive may still be useful as an AI-safety case study. DOI: 10.5281/zenodo.19851006.</p>
+          </div>
+          <div class="pub-links">
+            <a class="mini-btn" href="downloads/LSC_MDLH_PRO.pdf">PDF</a>
+            <a class="mini-btn" href="https://zenodo.org/records/19851006" target="_blank" rel="noopener">Zenodo</a>
+            <a class="mini-btn" href="https://github.com/luciferprosun/LSC_MDLH_PRO" target="_blank" rel="noopener">GitHub</a>
+          </div>
+        </div>
+        <div class="pub-item">
+          <div>
+            <span class="tag">2026 // LSC v1.2.0</span>
+            <h3>LSC Framework v1.2.0: Computational Extension and Reproducibility Update</h3>
+            <p>Reproducibility-oriented update for the LSC 6.0 line. DOI: 10.5281/zenodo.19843361.</p>
+          </div>
+          <div class="pub-links">
+            <a class="mini-btn" href="downloads/LSC_v1.2.0.pdf">PDF</a>
+            <a class="mini-btn" href="https://zenodo.org/records/19843361" target="_blank" rel="noopener">Zenodo</a>
+            <a class="mini-btn" href="https://github.com/luciferprosun/LSC-6.0/releases/tag/v1.2.0" target="_blank" rel="noopener">Release</a>
+          </div>
+        </div>
+        <div class="pub-item">
+          <div>
+            <span class="tag">2026 // LSC 6.0</span>
+            <h3>LSC 6.0: Phenomenological Framework and Software Release</h3>
+            <p>Current LSC public record and software DOI. Working-paper DOI: 10.5281/zenodo.19780616. Software DOI: 10.5281/zenodo.19785745.</p>
+          </div>
+          <div class="pub-links">
+            <a class="mini-btn" href="downloads/LSC60_ZENODO_RELEASE.pdf">PDF</a>
+            <a class="mini-btn" href="https://zenodo.org/records/19780616" target="_blank" rel="noopener">Paper</a>
+            <a class="mini-btn" href="https://zenodo.org/records/19785745" target="_blank" rel="noopener">Software</a>
+          </div>
+        </div>
+        <div class="pub-item">
+          <div>
+            <span class="tag">2026 // Prior Record</span>
+            <h3>LSC 4.2 ULTRA and Gallium Deficit Notes</h3>
+            <p>Earlier public records used as lineage and anomaly-context material. LSC 4.2 DOI: 10.5281/zenodo.19602045. Gallium Deficit DOI: 10.5281/zenodo.19701141.</p>
+          </div>
+          <div class="pub-links">
+            <a class="mini-btn" href="downloads/LSC42_ULTRA_FULL_ZENODO.pdf">LSC 4.2 PDF</a>
+            <a class="mini-btn" href="https://zenodo.org/records/19602045" target="_blank" rel="noopener">LSC 4.2</a>
+            <a class="mini-btn" href="https://zenodo.org/records/19701141" target="_blank" rel="noopener">Gallium</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -322,9 +411,12 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
       <h2>For review, collaboration, grants and independent verification.</h2>
       <p>Email: <a href="mailto:tonystarrkarc@gmail.com">tonystarrkarc@gmail.com</a></p>
       <div class="links">
+        <a class="btn primary" href="https://zenodo.org/records/19851006" target="_blank" rel="noopener">Zenodo MDLH</a>
+        <a class="btn" href="https://github.com/luciferprosun/LSC_MDLH_PRO" target="_blank" rel="noopener">GitHub MDLH</a>
+        <a class="btn" href="https://zenodo.org/records/19843361" target="_blank" rel="noopener">Zenodo LSC v1.2.0</a>
         <a class="btn primary" href="https://zenodo.org/records/19780616" target="_blank" rel="noopener">Zenodo LSC 6.0</a>
         <a class="btn" href="https://github.com/luciferprosun/LSC-6.0" target="_blank" rel="noopener">GitHub LSC 6.0</a>
-        <a class="btn" href="https://github.com/luciferprosun/LSC-6.0/releases/tag/v1.0.0" target="_blank" rel="noopener">GitHub Release</a>
+        <a class="btn" href="https://github.com/luciferprosun/LSC-6.0/releases/tag/v1.2.0" target="_blank" rel="noopener">GitHub Release</a>
         <a class="btn" href="https://www.linkedin.com/in/%C5%82ukasz-%C5%BCuchowski-807160316/" target="_blank" rel="noopener">LinkedIn</a>
         <a class="btn" href="https://www.facebook.com/proximacentauri333" target="_blank" rel="noopener">Facebook Archive</a>
       </div>
