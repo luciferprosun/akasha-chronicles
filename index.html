@@ -136,6 +136,49 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
     display: grid;
     gap: 10px;
   }
+  #akasha-site .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  #akasha-site .metric {
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.11);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+  }
+  #akasha-site .metric strong {
+    display: block;
+    font-size: 18px;
+    line-height: 1.1;
+  }
+  #akasha-site .metric span {
+    display: block;
+    margin-top: 4px;
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  #akasha-site .tracker-log {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  #akasha-site .tracker-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 11px;
+    border: 1px solid rgba(255,255,255,0.11);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  #akasha-site .tracker-row b {
+    color: var(--text);
+    font-size: 12px;
+  }
   #akasha-site .status-item {
     padding: 11px;
     border: 1px solid rgba(255,255,255,0.11);
@@ -387,6 +430,7 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
     #akasha-site .pub-item { grid-template-columns: 1fr; }
     #akasha-site .pub-links { justify-content: flex-start; }
     #akasha-site iframe { height: 520px; }
+    #akasha-site .metrics-grid { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -681,8 +725,99 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
           <div class="status-item"><b>Next product layer</b><span>AI Hallucination Correlation Scanner.</span></div>
         </div>
       </div>
+      <div class="portal-panel" aria-label="Privacy-safe visitor panel">
+        <h3>Visitor Panel</h3>
+        <div class="metrics-grid">
+          <div class="metric"><strong id="akasha-visits">0</strong><span>Views in this browser</span></div>
+          <div class="metric"><strong id="akasha-sessions">0</strong><span>Sessions this browser</span></div>
+          <div class="metric"><strong id="akasha-clicks">0</strong><span>Tracked clicks</span></div>
+          <div class="metric"><strong id="akasha-days">0</strong><span>Active days</span></div>
+        </div>
+        <div class="tracker-log">
+          <div class="tracker-row"><b>Last visit</b><span id="akasha-last-visit">n/a</span></div>
+          <div class="tracker-row"><b>Last action</b><span id="akasha-last-action">n/a</span></div>
+          <div class="tracker-row"><b>Data policy</b><span>No IP collection</span></div>
+        </div>
+      </div>
     </aside>
   </div>
+
+  <script>
+  (function () {
+    const key = (name) => `akasha.${name}`;
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const readJSON = (name, fallback) => {
+      try {
+        const raw = localStorage.getItem(key(name));
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    };
+    const writeJSON = (name, value) => localStorage.setItem(key(name), JSON.stringify(value));
+
+    const stats = readJSON('stats', {
+      visits: 0,
+      sessions: 0,
+      activeDays: [],
+      lastVisit: null,
+      lastAction: null,
+      actions: {},
+    });
+
+    const today = now.toISOString().slice(0, 10);
+    const sessionSeen = sessionStorage.getItem(key('sessionSeen')) === '1';
+    if (!sessionSeen) {
+      stats.sessions += 1;
+      sessionStorage.setItem(key('sessionSeen'), '1');
+    }
+    stats.visits += 1;
+    stats.lastVisit = now.toISOString();
+    if (!stats.activeDays.includes(today)) stats.activeDays.push(today);
+    writeJSON('stats', stats);
+
+    const setText = (id, value) => {
+      const node = document.getElementById(id);
+      if (node) node.textContent = value;
+    };
+    const totalClicks = () => Object.values(stats.actions).reduce((sum, count) => sum + count, 0);
+
+    setText('akasha-visits', String(stats.visits));
+    setText('akasha-sessions', String(stats.sessions));
+    setText('akasha-clicks', String(totalClicks()));
+    setText('akasha-days', String(stats.activeDays.length));
+    setText('akasha-last-visit', stats.lastVisit ? fmt.format(new Date(stats.lastVisit)) : 'n/a');
+    setText('akasha-last-action', stats.lastAction ? stats.lastAction : 'n/a');
+
+    const recordAction = (label) => {
+      stats.actions[label] = (stats.actions[label] || 0) + 1;
+      stats.lastAction = label;
+      writeJSON('stats', stats);
+      setText('akasha-clicks', String(totalClicks()));
+      setText('akasha-last-action', label);
+    };
+
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('a, button');
+      if (!target || !target.id && !target.className) return;
+      const label = target.getAttribute('aria-label') || target.textContent.trim().replace(/\s+/g, ' ').slice(0, 64);
+      if (label) recordAction(label);
+    }, { capture: true });
+
+    const trackedLinks = document.querySelectorAll('#akasha-site a');
+    trackedLinks.forEach((link) => {
+      link.addEventListener('mouseenter', () => {
+        const label = link.getAttribute('aria-label') || link.textContent.trim().replace(/\s+/g, ' ').slice(0, 64);
+        if (label) setText('akasha-last-action', `hover: ${label}`);
+      });
+    });
+  }());
+  </script>
 </main>
 
 <!-- Optional privacy-friendly analytics. Replace YOURCODE with your GoatCounter code.
