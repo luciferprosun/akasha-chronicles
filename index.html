@@ -179,6 +179,43 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
     color: var(--text);
     font-size: 12px;
   }
+  #akasha-site .geo-panel {
+    display: grid;
+    gap: 10px;
+  }
+  #akasha-site .geo-headline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  #akasha-site .geo-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #akasha-site .geo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 720;
+  }
+  #akasha-site .geo-chip i {
+    font-style: normal;
+    color: var(--gold);
+  }
+  #akasha-site .geo-fineprint {
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.4;
+  }
   #akasha-site .status-item {
     padding: 11px;
     border: 1px solid rgba(255,255,255,0.11);
@@ -725,19 +762,24 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
           <div class="status-item"><b>Next product layer</b><span>AI Hallucination Correlation Scanner.</span></div>
         </div>
       </div>
-      <div class="portal-panel" aria-label="Privacy-safe visitor panel">
-        <h3>Visitor Panel</h3>
+      <div class="portal-panel geo-panel" aria-label="Visitor atlas">
+        <div class="geo-headline">
+          <h3>Visitor Atlas</h3>
+          <span class="geo-chip"><i>CF</i><span id="akasha-country">UN</span></span>
+        </div>
         <div class="metrics-grid">
-          <div class="metric"><strong id="akasha-visits">0</strong><span>Views in this browser</span></div>
-          <div class="metric"><strong id="akasha-sessions">0</strong><span>Sessions this browser</span></div>
+          <div class="metric"><strong id="akasha-visits">0</strong><span>Visits in this browser</span></div>
+          <div class="metric"><strong id="akasha-sessions">0</strong><span>Sessions in this browser</span></div>
+          <div class="metric"><strong id="akasha-countries">0</strong><span>Countries seen here</span></div>
           <div class="metric"><strong id="akasha-clicks">0</strong><span>Tracked clicks</span></div>
-          <div class="metric"><strong id="akasha-days">0</strong><span>Active days</span></div>
         </div>
         <div class="tracker-log">
           <div class="tracker-row"><b>Last visit</b><span id="akasha-last-visit">n/a</span></div>
-          <div class="tracker-row"><b>Last action</b><span id="akasha-last-action">n/a</span></div>
-          <div class="tracker-row"><b>Data policy</b><span>No IP collection</span></div>
+          <div class="tracker-row"><b>Last country</b><span id="akasha-last-country">n/a</span></div>
+          <div class="tracker-row"><b>Data policy</b><span>Country only, no IP storage</span></div>
         </div>
+        <div class="geo-chip-list" id="akasha-country-list" aria-label="Countries seen"></div>
+        <p class="geo-fineprint">The page records country-level visits in this browser only. On Cloudflare, the current country is read from edge geolocation. No raw IPs are stored.</p>
       </div>
     </aside>
   </div>
@@ -746,10 +788,8 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
   (function () {
     const key = (name) => `akasha.${name}`;
     const now = new Date();
-    const fmt = new Intl.DateTimeFormat(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
+    const fmt = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    const GEO_ENDPOINT = 'https://akasha-chronicles.pages.dev/api/geo';
 
     const readJSON = (name, fallback) => {
       try {
@@ -767,6 +807,8 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
       activeDays: [],
       lastVisit: null,
       lastAction: null,
+      lastCountry: 'UN',
+      countries: {},
       actions: {},
     });
 
@@ -786,13 +828,32 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
       if (node) node.textContent = value;
     };
     const totalClicks = () => Object.values(stats.actions).reduce((sum, count) => sum + count, 0);
+    const renderCountries = () => {
+      const list = document.getElementById('akasha-country-list');
+      const current = document.getElementById('akasha-country');
+      const lastCountry = document.getElementById('akasha-last-country');
+      const countryCount = document.getElementById('akasha-countries');
+      const entries = Object.entries(stats.countries)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+      if (countryCount) countryCount.textContent = String(Object.keys(stats.countries).length);
+      if (current) current.textContent = stats.lastCountry || 'UN';
+      if (lastCountry) lastCountry.textContent = stats.lastCountry || 'n/a';
+      if (list) {
+        list.innerHTML = entries.length
+          ? entries.map(([code, count]) => `<span class="geo-chip"><i>${code}</i><span>${count}</span></span>`).join('')
+          : '<span class="geo-chip"><i>UN</i><span>0</span></span>';
+      }
+    };
 
     setText('akasha-visits', String(stats.visits));
     setText('akasha-sessions', String(stats.sessions));
     setText('akasha-clicks', String(totalClicks()));
-    setText('akasha-days', String(stats.activeDays.length));
+    setText('akasha-last-country', stats.lastCountry || 'n/a');
+    setText('akasha-countries', String(Object.keys(stats.countries).length));
     setText('akasha-last-visit', stats.lastVisit ? fmt.format(new Date(stats.lastVisit)) : 'n/a');
     setText('akasha-last-action', stats.lastAction ? stats.lastAction : 'n/a');
+    renderCountries();
 
     const recordAction = (label) => {
       stats.actions[label] = (stats.actions[label] || 0) + 1;
@@ -809,13 +870,23 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
       if (label) recordAction(label);
     }, { capture: true });
 
-    const trackedLinks = document.querySelectorAll('#akasha-site a');
-    trackedLinks.forEach((link) => {
-      link.addEventListener('mouseenter', () => {
-        const label = link.getAttribute('aria-label') || link.textContent.trim().replace(/\s+/g, ' ').slice(0, 64);
-        if (label) setText('akasha-last-action', `hover: ${label}`);
+    fetch(GEO_ENDPOINT, { cache: 'no-store', mode: 'cors' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((geo) => {
+        const country = (geo && geo.country) ? String(geo.country).toUpperCase() : 'UN';
+        stats.lastCountry = country;
+        stats.countries[country] = (stats.countries[country] || 0) + 1;
+        writeJSON('stats', stats);
+        setText('akasha-country', country);
+        setText('akasha-last-country', country);
+        renderCountries();
+      })
+      .catch(() => {
+        stats.lastCountry = stats.lastCountry || 'UN';
+        stats.countries[stats.lastCountry] = stats.countries[stats.lastCountry] || 0;
+        writeJSON('stats', stats);
+        renderCountries();
       });
-    });
   }());
   </script>
 </main>
