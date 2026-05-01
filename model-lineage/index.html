@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LSC / MHLM Model Lineage Simulator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">LSC / MHLM Archive Core</p>
+        <h1>Model Lineage Simulator</h1>
+        <p id="mission" class="lead"></p>
+      </div>
+      <div class="tagbox">
+        <span>#LuciferSun</span>
+        <span>#Codex</span>
+        <span>#FlameBornLLC</span>
+      </div>
+    </header>
+
+    <section class="metrics" aria-label="Archive metrics">
+      <div><strong id="model-count">0</strong><span>models / layers</span></div>
+      <div><strong id="coherence-score">0</strong><span>avg coherence</span></div>
+      <div><strong id="risk-score">0</strong><span>avg risk pressure</span></div>
+      <div><strong id="validation-score">0</strong><span>avg validation pressure</span></div>
+    </section>
+
+    <section class="grid">
+      <aside class="panel">
+        <h2>Decision Timeline</h2>
+        <div id="timeline" class="timeline"></div>
+      </aside>
+
+      <section class="panel detail">
+        <h2 id="detail-title"></h2>
+        <p id="detail-role" class="muted"></p>
+        <div class="detail-grid">
+          <div>
+            <h3>Contribution</h3>
+            <p id="detail-contribution"></p>
+          </div>
+          <div>
+            <h3>Strengthened</h3>
+            <p id="detail-strengthened"></p>
+          </div>
+          <div>
+            <h3>Weakened</h3>
+            <p id="detail-weakened"></p>
+          </div>
+          <div>
+            <h3>Decision Style</h3>
+            <p id="detail-style"></p>
+            <h3>Review Status</h3>
+            <p id="detail-status"></p>
+          </div>
+        </div>
+        <div id="score-rows" class="score-rows"></div>
+      </section>
+    </section>
+
+    <section class="grid two">
+      <section class="panel">
+        <div class="section-head">
+          <h2>Simulation Core</h2>
+          <span>toy model, not empirical proof</span>
+        </div>
+        <label>Validation strength <output id="validation-value">0.55</output></label>
+        <input id="validation" type="range" min="0.05" max="2" value="0.55" step="0.05">
+        <label>Expert review strength <output id="expert-review-value">0.45</output></label>
+        <input id="expert-review" type="range" min="0.05" max="2" value="0.45" step="0.05">
+        <label>Iterations <output id="iterations-value">8</output></label>
+        <input id="iterations" type="range" min="3" max="18" value="8" step="1">
+        <div class="sim-metrics">
+          <div><strong id="amp-output">0</strong><span>amplification</span></div>
+          <div><strong id="sim-risk">0%</strong><span>risk</span></div>
+          <div><strong id="sim-coherence">0%</strong><span>coherence</span></div>
+          <div><strong id="sim-audit">0%</strong><span>audit</span></div>
+        </div>
+        <div id="simulation-chart" class="chart"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <h2>Disagreement Matrix</h2>
+          <span>decision-vector distance</span>
+        </div>
+        <div id="matrix" class="matrix" aria-label="Pairwise model disagreement matrix"></div>
+        <p class="note">Higher values mean the model layer behaved differently across novelty, conservatism, validation pressure, risk reduction, coherence, and disagreement.</p>
+      </section>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>Generated Report</h2>
+        <span>copy into archive notes</span>
+      </div>
+      <textarea id="generated-report" rows="16" spellcheck="false"></textarea>
+    </section>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
