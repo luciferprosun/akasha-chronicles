@@ -278,8 +278,9 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
     inset: 0;
     z-index: -2;
     background-image: var(--bg-img);
-    background-size: cover;
-    background-position: center;
+    background-size: var(--bg-size, cover);
+    background-position: var(--bg-position, center);
+    background-repeat: var(--bg-repeat, no-repeat);
     opacity: var(--bg-opacity, 0.36);
     transform: scale(1.02);
   }
@@ -699,7 +700,7 @@ then replace relative paths like assets/hero_cosmic_network.webp with the Carrd 
     </aside>
 
     <div class="portal-feed">
-  <section id="home" class="section" style="--bg-img:url('assets/lsc62_cyberpunk_fb.png');--bg-opacity:.62">
+  <section id="home" class="section" style="--bg-img:url('assets/flameborn_bg.jpg');--bg-opacity:.95;--bg-repeat:no-repeat;--bg-position:right center;--bg-size:min(860px, 62vw) auto">
     <div class="wrap narrow">
       <div class="eyebrow">Akasha Chronicles // LSC Research // Flameborn Eden 2.0 signal</div>
       <h1 class="glitch-title">A living archive for theory, anomaly and awakening.</h1>
