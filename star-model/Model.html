@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>NASA Solar Dynamics Observatory - Real-Time Star Render</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+        }
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            padding: 10px 18px;
+            border-radius: 30px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            pointer-events: none;
+            font-weight: 400;
+            border-left: 3px solid #ff7b2c;
+            font-family: monospace;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(10,10,20,0.75);
+            backdrop-filter: blur(8px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: white;
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid rgba(255,100,50,0.4);
+            pointer-events: auto;
+            font-family: 'Segoe UI', monospace;
+        }
+        button {
+            background: rgba(20,20,40,0.9);
+            border: 1px solid #ff7b2c;
+            color: #ffbc8c;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            background: #ff7b2c;
+            color: black;
+            box-shadow: 0 0 12px rgba(255,100,0,0.6);
+        }
+        .active-mode {
+            background: #ff7b2c;
+            color: black;
+            box-shadow: 0 0 8px orange;
+        }
+        @media (max-width: 700px) {
+            #controls { padding: 6px 12px; gap: 8px; }
+            button { padding: 4px 10px; font-size: 10px; }
+            #info { font-size: 9px; bottom: 10px; left: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        🌞 NASA STYLE CLOSED STAR • REALISTIC PLASMA • CORONA & FLARES
+    </div>
+    <div id="controls">
+        <button id="closedBtn" class="active-mode">🌕 CLOSED STAR</button>
+        <button id="diagnosticBtn">🔬 DIAGNOSTIC CUTAWAY</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x010318);
+        scene.fog = new THREE.FogExp2(0x010318, 0.0004);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(2.2, 1.2, 4.5);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.35;
+        document.body.appendChild(renderer.domElement);
+
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.3, 0.85);
+        bloomPass.threshold = 0.12;
+        bloomPass.strength = 0.95;
+        bloomPass.radius = 0.8;
+        const effectComposer = new EffectComposer(renderer);
+        effectComposer.addPass(renderScene);
+        effectComposer.addPass(bloomPass);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+        controls.zoomSpeed = 1.2;
+        controls.rotateSpeed = 1.0;
+        controls.target.set(0, 0, 0);
+
+        const ambientLight = new THREE.AmbientLight(0x111118, 0.25);
+        scene.add(ambientLight);
+        const starLight = new THREE.PointLight(0xff8833, 2.2, 20);
+        starLight.position.set(0, 0, 0);
+        scene.add(starLight);
+        const backRim = new THREE.DirectionalLight(0xffaa66, 0.9);
+        backRim.position.set(-2, 1, -2);
+        scene.add(backRim);
+        const warmFill = new THREE.DirectionalLight(0xff9944, 0.6);
+        warmFill.position.set(1, 1.5, 2);
+        scene.add(warmFill);
+
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 3200;
+        const starPos = [];
+        for (let i = 0; i < starCount; i++) {
+            const r = 45 + Math.random() * 80;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            starPos.push(r * Math.sin(phi) * Math.cos(theta));
+            starPos.push(r * Math.sin(phi) * Math.sin(theta));
+            starPos.push(r * Math.cos(phi));
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.065, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+
+        const textureLoader = new THREE.TextureLoader();
+        const createFallbackTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ff8c42';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < 800; i++) {
+                ctx.fillStyle = `rgba(255, ${120 + Math.random() * 100}, ${40 + Math.random() * 60}, ${Math.random() * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 3 + 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.strokeStyle = '#ffaa55';
+            ctx.lineWidth = 6;
+            for (let s = 0; s < 60; s++) {
+                ctx.beginPath();
+                ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                ctx.stroke();
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2, 1);
+            return tex;
+        };
+
+        let surfaceTex;
+        let magneticTex;
+        try {
+            surfaceTex = textureLoader.load('assets/latest_1024_0304.jpg');
+            magneticTex = textureLoader.load('assets/latest_1024_HMIIC.jpg');
+        } catch (e) {
+            console.warn('Using procedural fallback textures');
+            surfaceTex = createFallbackTexture();
+            magneticTex = createFallbackTexture();
+        }
+        surfaceTex.wrapS = THREE.RepeatWrapping;
+        surfaceTex.wrapT = THREE.RepeatWrapping;
+        surfaceTex.repeat.set(2.2, 1);
+        magneticTex.wrapS = THREE.RepeatWrapping;
+        magneticTex.wrapT = THREE.RepeatWrapping;
+
+        const vertexShaderCore = `
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+            void main() {
+                vUv = uv;
+                vNormal = normalize(normalMatrix * normal);
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                vViewPosition = -mvPosition.xyz;
+                gl_PointSize = 1.0;
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        const photosphereFrag = `
+            uniform sampler2D surfaceMap;
+            uniform sampler2D magneticMap;
+            uniform float time;
+            uniform float cutActive;
+            varying vec2 vUv;
+            varying vec3 vNormal;
+
+            float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123); }
+            float noise(vec2 st) {
+                vec2 i = floor(st);
+                vec2 f = fract(st);
+                float a = random(i);
+                float b = random(i + vec2(1.0, 0.0));
+                float c = random(i + vec2(0.0, 1.0));
+                float d = random(i + vec2(1.0, 1.0));
+                vec2 u = f*f*(3.0-2.0*f);
+                return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+            }
+
+            void main() {
+                if(cutActive > 0.5 && vUv.y > 0.75 && vNormal.z > -0.2) discard;
+                if(cutActive > 0.5 && vUv.y < 0.25 && vNormal.x > 0.1) discard;
+
+                vec2 uv = vUv;
+                uv.x += time * 0.008;
+                vec3 nasaColor = texture2D(surfaceMap, uv).rgb;
+                vec3 magnetic = texture2D(magneticMap, uv).rgb;
+                float magneticIntensity = (magnetic.r + magnetic.g + magnetic.b) / 3.0;
+
+                vec2 grainUv = vUv * 45.0 + vec2(time * 0.5);
+                float grain = noise(floor(grainUv * 20.0)) * 0.22;
+                float spotMask = smoothstep(0.45, 0.85, noise(vUv * 12.0 + time * 0.1));
+                float faculae = smoothstep(0.6, 0.95, noise(vUv * 28.0 - time * 0.15));
+
+                vec3 baseColor = nasaColor * vec3(1.5, 1.1, 0.7);
+                baseColor += vec3(0.85, 0.45, 0.2) * magneticIntensity * 0.5;
+                baseColor += vec3(1.0, 0.7, 0.3) * faculae * 0.4;
+                vec3 darkSpot = vec3(0.25, 0.1, 0.03);
+                baseColor = mix(baseColor, darkSpot, spotMask * 0.7);
+                baseColor += vec3(0.9, 0.5, 0.15) * grain;
+
+                float fresnel = pow(1.0 - abs(dot(vNormal, normalize(vec3(0.0,0.0,1.0)))), 1.8);
+                baseColor *= (0.65 + fresnel * 0.7);
+
+                float emission = 0.35 + magneticIntensity * 0.5 + faculae * 0.3;
+                gl_FragColor = vec4(baseColor * (0.9 + emission), 1.0);
+            }
+        `;
+
+        const coronaFrag = `
+            uniform float time;
+            uniform float cutActive;
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            void main() {
+                if(cutActive > 0.5) discard;
+                vec2 uv = vUv * 3.0;
+                float pattern = sin(uv.x * 25.0 + time) * cos(uv.y * 35.0 - time * 1.3);
+                pattern += sin(uv.y * 48.0 + time * 1.8) * 0.5;
+                pattern = clamp(pattern * 0.7 + 0.3, 0.0, 1.0);
+                float edgeGlow = pow(1.0 - abs(vNormal.y), 2.5);
+                float alpha = (pattern * 0.55 + edgeGlow * 0.45) * 0.68;
+                vec3 col = mix(vec3(1.0, 0.45, 0.12), vec3(1.0, 0.8, 0.4), pattern);
+                gl_FragColor = vec4(col, alpha * 0.9);
+            }
+        `;
+
+        const prominenceFrag = `
+            uniform float time;
+            uniform float cutActive;
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            void main() {
+                if(cutActive > 0.5) discard;
+                vec2 uv = vUv * 12.0;
+                float flow = sin(uv.x * 8.0 + time) * cos(uv.y * 12.0 - time * 2.0);
+                flow += sin(uv.y * 20.0 + time * 2.4) * 0.6;
+                float mask = smoothstep(0.5, 0.92, flow) * (1.0 - smoothstep(0.0, 0.3, vUv.y));
+                float alpha = mask * 0.7;
+                vec3 color = vec3(1.0, 0.45, 0.1) + vec3(0.7, 0.3, 0.05) * flow;
+                gl_FragColor = vec4(color, alpha);
+            }
+        `;
+
+        const innerLayerFrag = `
+            uniform vec3 colorA;
+            uniform vec3 colorB;
+            uniform float time;
+            uniform float cutActive;
+            varying vec2 vUv;
+            void main() {
+                if(cutActive < 0.5) discard;
+                float puls = 0.7 + 0.3 * sin(time * 3.0 + vUv.x * 15.0);
+                vec3 col = mix(colorA, colorB, vUv.y + sin(vUv.x * 20.0 + time) * 0.2);
+                gl_FragColor = vec4(col * puls, 0.85);
+            }
+        `;
+
+        const starGroup = new THREE.Group();
+        scene.add(starGroup);
+
+        const photosphereMat = new THREE.ShaderMaterial({
+            uniforms: {
+                surfaceMap: { value: surfaceTex },
+                magneticMap: { value: magneticTex },
+                time: { value: 0 },
+                cutActive: { value: 0 }
+            },
+            vertexShader: vertexShaderCore,
+            fragmentShader: photosphereFrag,
+            side: THREE.DoubleSide,
+            transparent: false
+        });
+        const photosphereMesh = new THREE.Mesh(new THREE.SphereGeometry(1.48, 512, 512), photosphereMat);
+        starGroup.add(photosphereMesh);
+
+        const coronaMat = new THREE.ShaderMaterial({
+            uniforms: { time: { value: 0 }, cutActive: { value: 0 } },
+            vertexShader: vertexShaderCore,
+            fragmentShader: coronaFrag,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide
+        });
+        const coronaMesh = new THREE.Mesh(new THREE.SphereGeometry(1.72, 256, 256), coronaMat);
+        starGroup.add(coronaMesh);
+
+        const prominenceMat = new THREE.ShaderMaterial({
+            uniforms: { time: { value: 0 }, cutActive: { value: 0 } },
+            vertexShader: vertexShaderCore,
+            fragmentShader: prominenceFrag,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+        const prominenceMesh = new THREE.Mesh(new THREE.SphereGeometry(1.56, 384, 384), prominenceMat);
+        starGroup.add(prominenceMesh);
+
+        const coreMat = new THREE.ShaderMaterial({
+            uniforms: { colorA: { value: new THREE.Color(0xffaa55) }, colorB: { value: new THREE.Color(0xff6633) }, time: { value: 0 }, cutActive: { value: 0 } },
+            vertexShader: vertexShaderCore,
+            fragmentShader: innerLayerFrag,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(0.44, 256, 256), coreMat);
+        starGroup.add(coreSphere);
+
+        const radiativeMat = new THREE.ShaderMaterial({
+            uniforms: { colorA: { value: new THREE.Color(0xff8844) }, colorB: { value: new THREE.Color(0xff4411) }, time: { value: 0 }, cutActive: { value: 0 } },
+            vertexShader: vertexShaderCore,
+            fragmentShader: innerLayerFrag,
+            transparent: true
+        });
+        const radiativeSphere = new THREE.Mesh(new THREE.SphereGeometry(0.92, 320, 320), radiativeMat);
+        starGroup.add(radiativeSphere);
+
+        const convectiveMat = new THREE.ShaderMaterial({
+            uniforms: { colorA: { value: new THREE.Color(0xff6633) }, colorB: { value: new THREE.Color(0xff2200) }, time: { value: 0 }, cutActive: { value: 0 } },
+            vertexShader: vertexShaderCore,
+            fragmentShader: innerLayerFrag,
+            transparent: true
+        });
+        const convectiveSphere = new THREE.Mesh(new THREE.SphereGeometry(1.22, 360, 360), convectiveMat);
+        starGroup.add(convectiveSphere);
+
+        const shellMat = new THREE.ShaderMaterial({
+            uniforms: { time: { value: 0 }, cutActive: { value: 0 }, surfaceMap: { value: surfaceTex } },
+            vertexShader: vertexShaderCore,
+            fragmentShader: `
+                uniform sampler2D surfaceMap;
+                uniform float time;
+                uniform float cutActive;
+                varying vec2 vUv;
+                void main() {
+                    if(cutActive > 0.5) discard;
+                    vec2 uv = vUv;
+                    uv.x += time * 0.012;
+                    vec3 tex = texture2D(surfaceMap, uv).rgb;
+                    float intensity = (tex.r + tex.g + tex.b) / 3.0;
+                    float alpha = intensity * 0.35;
+                    gl_FragColor = vec4(vec3(1.0, 0.5, 0.15), alpha);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+        const shellMesh = new THREE.Mesh(new THREE.SphereGeometry(1.51, 400, 400), shellMat);
+        starGroup.add(shellMesh);
+
+        const cutPlaneGeo = new THREE.CircleGeometry(1.6, 64);
+        const cutPlaneMat = new THREE.MeshStandardMaterial({ color: 0x221100, emissive: 0x331100, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+        const cutPlane = new THREE.Mesh(cutPlaneGeo, cutPlaneMat);
+        cutPlane.rotation.x = Math.PI / 2;
+        cutPlane.position.z = -0.2;
+        starGroup.add(cutPlane);
+        cutPlane.visible = false;
+
+        const flareTexture = (() => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(255,100,0,0)';
+            ctx.fillRect(0, 0, 128, 128);
+            ctx.beginPath();
+            ctx.arc(64, 64, 32, 0, Math.PI*2);
+            ctx.fillStyle = '#ffaa33';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(64, 64, 18, 0, Math.PI*2);
+            ctx.fillStyle = '#ffdd99';
+            ctx.fill();
+            const gradient = ctx.createRadialGradient(64,64,0,64,64,64);
+            gradient.addColorStop(0, '#ffffaa');
+            gradient.addColorStop(0.5, '#ff8822');
+            gradient.addColorStop(1, '#ff3300');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0,0,128,128);
+            return new THREE.CanvasTexture(canvas);
+        })();
+
+        const flaresGroup = new THREE.Group();
+        const flarePositions = [
+            { theta: 0.8, phi: 0.5, rad: 1.52 }, { theta: 2.2, phi: 1.1, rad: 1.55 }, { theta: 3.9, phi: 0.9, rad: 1.58 },
+            { theta: 5.0, phi: 1.3, rad: 1.54 }, { theta: 1.4, phi: 1.6, rad: 1.57 }, { theta: 4.2, phi: 0.3, rad: 1.53 }
+        ];
+        flarePositions.forEach((pos) => {
+            const spriteMat = new THREE.SpriteMaterial({ map: flareTexture, color: 0xffaa66, blending: THREE.AdditiveBlending, transparent: true });
+            const sprite = new THREE.Sprite(spriteMat);
+            const x = pos.rad * Math.sin(pos.phi) * Math.cos(pos.theta);
+            const y = pos.rad * Math.cos(pos.phi);
+            const z = pos.rad * Math.sin(pos.phi) * Math.sin(pos.theta);
+            sprite.position.set(x, y, z);
+            sprite.scale.set(0.22, 0.22, 1);
+            flaresGroup.add(sprite);
+        });
+        starGroup.add(flaresGroup);
+
+        let cutActiveFlag = false;
+
+        function setCutawayMode(enable) {
+            cutActiveFlag = enable;
+            const cutVal = enable ? 1.0 : 0.0;
+            photosphereMat.uniforms.cutActive.value = cutVal;
+            coronaMat.uniforms.cutActive.value = cutVal;
+            prominenceMat.uniforms.cutActive.value = cutVal;
+            shellMat.uniforms.cutActive.value = cutVal;
+            coreMat.uniforms.cutActive.value = cutVal;
+            radiativeMat.uniforms.cutActive.value = cutVal;
+            convectiveMat.uniforms.cutActive.value = cutVal;
+            cutPlane.visible = enable;
+            coreSphere.visible = enable;
+            radiativeSphere.visible = enable;
+            convectiveSphere.visible = enable;
+
+            const closedBtn = document.getElementById('closedBtn');
+            const diagBtn = document.getElementById('diagnosticBtn');
+            if(enable) {
+                closedBtn.classList.remove('active-mode');
+                diagBtn.classList.add('active-mode');
+            } else {
+                closedBtn.classList.add('active-mode');
+                diagBtn.classList.remove('active-mode');
+            }
+        }
+
+        document.getElementById('closedBtn').addEventListener('click', () => setCutawayMode(false));
+        document.getElementById('diagnosticBtn').addEventListener('click', () => setCutawayMode(true));
+
+        setCutawayMode(false);
+        starGroup.rotation.y = -0.3;
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            clock.getDelta();
+            const elapsedTime = performance.now() / 1000;
+
+            photosphereMat.uniforms.time.value = elapsedTime;
+            coronaMat.uniforms.time.value = elapsedTime;
+            prominenceMat.uniforms.time.value = elapsedTime;
+            shellMat.uniforms.time.value = elapsedTime;
+            coreMat.uniforms.time.value = elapsedTime;
+            radiativeMat.uniforms.time.value = elapsedTime;
+            convectiveMat.uniforms.time.value = elapsedTime;
+
+            starGroup.rotation.y += 0.0022;
+            starGroup.rotation.x = Math.sin(elapsedTime * 0.07) * 0.03;
+            starGroup.rotation.z = Math.cos(elapsedTime * 0.05) * 0.02;
+
+            flaresGroup.children.forEach((flare, idx) => {
+                const scale = 0.22 + Math.sin(elapsedTime * 3.5 + idx) * 0.05;
+                flare.scale.set(scale, scale, 1);
+                flare.material.opacity = 0.7 + Math.sin(elapsedTime * 4.2 + idx) * 0.3;
+            });
+
+            controls.update();
+            effectComposer.render();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            effectComposer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        console.log('NASA-level star render active: closed by default, diagnostic cutaway available.');
+    </script>
+</body>
+</html>
