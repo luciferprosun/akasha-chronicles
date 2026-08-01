@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>NASA SDO Star — Equirect v2</title>
+<title>NASA SDO Star — Equirect v3 synoptic</title>
 <link rel="icon" href="data:,">
 <style>
   :root { --accent:#ff7b2c; --glass:rgba(10,10,20,.62); }
@@ -51,7 +51,7 @@
 </head>
 <body>
 <div id="veil"><div id="pct">LOADING SDO DATA</div><div id="bar"><div id="fill"></div></div></div>
-<div id="badge" class="glass">NASA SDO/AIA+HMI data &bull; equirect-mapped &bull; v2</div>
+<div id="badge" class="glass">NASA SDO/AIA+HMI data &bull; equirect-mapped &bull; v3 synoptic</div>
 <div id="panel" class="glass">
   <div id="row">
     <button data-w="0304" class="on">304 &Aring;</button>
@@ -80,13 +80,13 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // ---------------------------------------------------------------- config
 const SUN_R = 1.5;
 const MODES = {
-  '0304': { file:'./assets/equirect_0304.jpg',  color:'#ff4411', euv:1,
+  '0304': { file:'./assets/equirect_syn_0304.jpg',  color:'#ff4411', euv:1,
             legend:'304 Å He II — chromosphere / transition region (~50,000 K)' },
-  '0193': { file:'./assets/equirect_0193.jpg',  color:'#c8963c', euv:1,
+  '0193': { file:'./assets/equirect_syn_0193.jpg',  color:'#c8963c', euv:1,
             legend:'193 Å Fe XII — corona & flare plasma (~1.2 MK)' },
-  '0211': { file:'./assets/equirect_0211.jpg',  color:'#b46ad8', euv:1,
+  '0211': { file:'./assets/equirect_syn_0211.jpg',  color:'#b46ad8', euv:1,
             legend:'211 Å Fe XIV — active-region corona (~2 MK)' },
-  'HMIIC':{ file:'./assets/equirect_HMIIC.jpg', color:'#ff9930', euv:0,
+  'HMIIC':{ file:'./assets/equirect_syn_HMIIC.jpg', color:'#ff9930', euv:0,
             legend:'HMI continuum — photosphere & sunspots (visible light)' },
 };
 const ORDER = ['0304','0193','0211','HMIIC'];
@@ -188,6 +188,8 @@ const photosphere = new THREE.Mesh(
   })
 );
 photosphere.rotation.y = -Math.PI/2; // equirect lon=0 faces the camera (+z)
+// optional ?lon=DEG start offset (e.g. lon=180 shows the far side)
+photosphere.rotation.y += (parseFloat(new URLSearchParams(location.search).get('lon')) || 0) * Math.PI/180;
 scene.add(photosphere);
 
 // ---------------------------------------------------------------- corona

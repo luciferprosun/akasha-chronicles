@@ -1,13 +1,26 @@
-# Star Model v2 — NASA-realistic SDO Sun
+# Star Model v3 — NASA-realistic SDO Sun (true 360° synoptic)
 
-Upgraded 3D star render: real NASA SDO data, properly equirect-mapped onto the sphere.
+3D star render on **real NASA SDO data covering the whole sphere**: synoptic
+Carrington-style mosaic from 31 days of SDO browse frames (2026-04-19 →
+2026-05-19, anchored 2026-05-05), all four channels (AIA 304/193/211 Å + HMI
+continuum).
 
-## What's new vs `star-model/`
+## Why synoptic?
 
-| area | v1 | v2 |
+SDO only photographs the Earth-facing hemisphere. v2 mirrored+blurred the far
+side. v3 builds the full 360° the same way NASA builds synoptic maps: the Sun
+rotates ~13.19°/day (synodic), so the central-meridian strips of ~28+ days
+cover all longitudes. Consequence: the far side is real data, time-shifted by
+up to ±15 days (active regions evolve) — that is inherent to every synoptic
+map, not a bug.
+
+## What's new vs `star-model/` (v1)
+
+| area | v1 | v3 |
 |---|---|---|
-| texture mapping | square photo wrapped with UV repeat (artifacts) | true equirectangular projection (orthographic → equirect conversion) |
-| resolution | 1024 px | 2048 px source SDO frames |
+| texture mapping | square photo wrapped with UV repeat (artifacts) | true equirect + full 360° synoptic mosaic |
+| far hemisphere | (absent) | real SDO data (time-shifted) |
+| resolution | 1024 px | 2048 px maps from 1024–2048 px SDO frames |
 | wavelengths | 1 (AIA 304) | 4 with in-shader crossfade: 304 Å, 193 Å, 211 Å, HMI continuum |
 | limb physics | none | physical limb darkening (HMI, u=0.64) / EUV limb brightening |
 | corona | single uniform shell | two-layer: fresnel inner glow + equatorial streamer field (1/r^2.2, fBm streaks, solar-minimum morphology) |
@@ -16,25 +29,42 @@ Upgraded 3D star render: real NASA SDO data, properly equirect-mapped onto the s
 
 ## Files
 
-- `index.html` — the model (self-contained; Three.js 0.160 via unpkg importmap)
-- `make_equirect.py` — regenerates `assets/equirect_*.jpg` from the SDO frames already in this repo (`../star-model/assets/nasa/`)
+- `index.html` — the model (self-contained; Three.js 0.160 via unpkg importmap).
+  URL param `?lon=180` starts on the far side.
+- `fetch_sdo.py` — downloads the 31-day frame set from the SDO browse archive
+  (`synoptic_raw/`, resilient: truncated listings, parallel curl, JPEG verify).
+- `make_synoptic.py` — builds `assets/equirect_syn_*.jpg` (2048×1024) from the
+  raw frames; `--check-sign` verifies the rotation sign convention by
+  adjacent-day strip correlation.
+- `make_equirect.py` — single-frame equirect converter (v2 pipeline; shared
+  disk-detection / radial-flattening functions).
 
-## Regenerating textures
+## Rebuild from scratch
 
 ```bash
 pip install opencv-python numpy pillow
 cd star-model-v2
-python3 make_equirect.py
-# → assets/equirect_{0304,0193,0211,HMIIC}.jpg + equirect_preview.png
+python3 fetch_sdo.py                 # 124 files, ~30 MB
+python3 make_synoptic.py --check-sign
+# → assets/equirect_syn_{0304,0193,0211,HMIIC}.jpg + synoptic_preview.png
+python3 -m http.server               # serve over http (Chrome blocks file:// textures)
 ```
 
 The equirect JPGs are derived assets (regenerable), so they are not committed;
 `index.html` shows a procedural warm-plasma fallback if they are missing.
 
-## Pipeline (make_equirect.py)
+## Mosaic pipeline (make_synoptic.py)
 
-1. Auto-detect disk `(cx, cy, R)` per frame — azimuthal radial profile drop, robust to bright corona; center refined by drop-steepness hill-climb; watermark auto-excluded.
-2. Radial flattening (gain ≤ 2.8×) — the renderer re-applies physical limb response, so the texture must be flat.
-3. Front hemisphere: inverse orthographic sampling (bilinear). Back hemisphere: blurred mirror, cosine cross-blend ±10° around the ±90° seam.
+1. Per daily frame: disk detect (azimuthal radial-profile drop, robust to
+   bright corona) + radial flattening (gain ≤ 2.8×) + disk-mean brightness.
+2. Day n's central-meridian map longitude: λ_cm = −13.19°·n (sign verified
+   empirically, overlap-strip Pearson 0.55 vs 0.02 for the flipped sign).
+3. Every equirect pixel gets raised-cosine-weighted contributions from the
+   1–4 days whose strips cover it; per-day brightness normalized first
+   (kills exposure banding).
+4. Weight taper near the limb (EUV dark moat / polar coronal holes);
+   zero-weight polar caps inpainted (TELEA) — polar detail is physically
+   unobservable from the ecliptic in EUV.
 
-Data: NASA SDO/AIA + HMI (frames of 2026-05-05, 2048 px).
+Data: NASA SDO/AIA + HMI browse archive (sdo.gsfc.nasa.gov), frames of
+2026-04-19 → 2026-05-19.
