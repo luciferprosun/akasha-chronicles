@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>NASA SDO Star — Equirect v2</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --accent:#ff7b2c; --glass:rgba(10,10,20,.62); }
+  * { box-sizing:border-box; }
+  body { margin:0; overflow:hidden; background:#000; color:#fff;
+         font-family:'Segoe UI',Roboto,Arial,sans-serif; }
+  canvas { display:block; }
+  .glass { background:var(--glass); backdrop-filter:blur(10px);
+           -webkit-backdrop-filter:blur(10px);
+           border:1px solid rgba(255,123,44,.35); border-radius:12px; }
+  #badge { position:fixed; top:14px; left:14px; z-index:10; padding:8px 14px;
+           font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px;
+           letter-spacing:1px; border-left:3px solid var(--accent);
+           pointer-events:none; opacity:.92; }
+  #panel { position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+           z-index:10; padding:10px 14px; display:flex; flex-direction:column;
+           gap:8px; align-items:center; max-width:94vw; }
+  #row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  button { background:rgba(20,20,40,.9); border:1px solid var(--accent);
+           color:#ffbc8c; padding:6px 14px; border-radius:30px; cursor:pointer;
+           font-weight:700; letter-spacing:1px; font-size:12px;
+           font-family:ui-monospace,Menlo,Consolas,monospace; transition:.18s; }
+  button:hover { background:var(--accent); color:#000;
+                 box-shadow:0 0 12px rgba(255,100,0,.6); }
+  button.on { background:var(--accent); color:#000;
+              box-shadow:0 0 8px orange; }
+  #legend { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:10.5px;
+            color:#ffb37a; letter-spacing:.5px; text-align:center; opacity:.85; }
+  #veil { position:fixed; inset:0; z-index:50; background:#050505;
+          display:flex; flex-direction:column; gap:14px; align-items:center;
+          justify-content:center; transition:opacity .6s;
+          font-family:ui-monospace,Menlo,Consolas,monospace; }
+  #veil.hide { opacity:0; pointer-events:none; }
+  #bar { width:220px; height:3px; background:#222; border-radius:2px; }
+  #fill { width:0%; height:100%; background:var(--accent); border-radius:2px;
+          transition:width .2s; }
+  #pct { font-size:11px; letter-spacing:2px; color:#ffbc8c; }
+  @media (max-width:640px) {
+    #badge { font-size:9px; padding:6px 10px; }
+    #panel { padding:8px 10px; bottom:10px; }
+    button { padding:5px 10px; font-size:10px; }
+    #legend { font-size:9px; }
+  }
+</style>
+</head>
+<body>
+<div id="veil"><div id="pct">LOADING SDO DATA</div><div id="bar"><div id="fill"></div></div></div>
+<div id="badge" class="glass">NASA SDO/AIA+HMI data &bull; equirect-mapped &bull; v2</div>
+<div id="panel" class="glass">
+  <div id="row">
+    <button data-w="0304" class="on">304 &Aring;</button>
+    <button data-w="0193">193 &Aring;</button>
+    <button data-w="0211">211 &Aring;</button>
+    <button data-w="HMIIC">HMI</button>
+    <button id="rot" class="on">ROTATE</button>
+  </div>
+  <div id="legend">304 &Aring; He II &mdash; chromosphere / transition region (~50,000 K)</div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// ---------------------------------------------------------------- config
+const SUN_R = 1.5;
+const MODES = {
+  '0304': { file:'./assets/equirect_0304.jpg',  color:'#ff4411', euv:1,
+            legend:'304 Å He II — chromosphere / transition region (~50,000 K)' },
+  '0193': { file:'./assets/equirect_0193.jpg',  color:'#c8963c', euv:1,
+            legend:'193 Å Fe XII — corona & flare plasma (~1.2 MK)' },
+  '0211': { file:'./assets/equirect_0211.jpg',  color:'#b46ad8', euv:1,
+            legend:'211 Å Fe XIV — active-region corona (~2 MK)' },
+  'HMIIC':{ file:'./assets/equirect_HMIIC.jpg', color:'#ff9930', euv:0,
+            legend:'HMI continuum — photosphere & sunspots (visible light)' },
+};
+const ORDER = ['0304','0193','0211','HMIIC'];
+
+// ---------------------------------------------------------------- renderer
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 300);
+camera.position.set(0.4, 0.9, 7.0);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 3.2;
+controls.maxDistance = 18;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.35;
+
+// ---------------------------------------------------------------- GLSL noise
+const NOISE = /* glsl */`
+  float hash3(vec3 p){
+    p = fract(p*0.3183099 + 0.1);
+    p *= 17.0;
+    return fract(p.x*p.y*p.z*(p.x+p.y+p.z));
+  }
+  float vnoise(vec3 p){
+    vec3 i = floor(p), f = fract(p);
+    f = f*f*(3.0-2.0*f);
+    return mix(mix(mix(hash3(i+vec3(0,0,0)), hash3(i+vec3(1,0,0)), f.x),
+                   mix(hash3(i+vec3(0,1,0)), hash3(i+vec3(1,1,0)), f.x), f.y),
+               mix(mix(hash3(i+vec3(0,0,1)), hash3(i+vec3(1,0,1)), f.x),
+                   mix(hash3(i+vec3(0,1,1)), hash3(i+vec3(1,1,1)), f.x), f.y), f.z);
+  }
+  float fbm(vec3 p){
+    float v = 0.0, a = 0.5;
+    for(int i=0;i<4;i++){ v += a*vnoise(p); p *= 2.03; a *= 0.5; }
+    return v;
+  }
+`;
+
+// ---------------------------------------------------------------- photosphere
+const photoUniforms = {
+  mapA:   { value: null },
+  mapB:   { value: null },
+  mixW:   { value: 0 },
+  uTime:  { value: 0 },
+  uEUV:   { value: 1 },   // 1 = EUV (limb brighten), 0 = HMI (limb darken)
+  uGran:  { value: 0.02 },// granulation amplitude
+  uBright:{ value: 1.05 } // disk brightness per mode
+};
+const photosphere = new THREE.Mesh(
+  new THREE.SphereGeometry(SUN_R, 256, 256),
+  new THREE.ShaderMaterial({
+    uniforms: photoUniforms,
+    vertexShader: /* glsl */`
+      varying vec2 vUv;
+      varying vec3 vObjN;
+      varying vec3 vNv;
+      varying vec3 vPos;
+      void main(){
+        vUv = uv;
+        vObjN = normalize(position);
+        vNv = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vPos = mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */`
+      uniform sampler2D mapA, mapB;
+      uniform float mixW, uTime, uEUV, uGran, uBright;
+      varying vec2 vUv;
+      varying vec3 vObjN;
+      varying vec3 vNv;
+      varying vec3 vPos;
+      ${NOISE}
+      void main(){
+        vec3 tex = mix(texture2D(mapA, vUv).rgb, texture2D(mapB, vUv).rgb, mixW);
+        // domain-warped fBm granulation (object space -> rotates with mesh)
+        vec3 gp = vObjN * 40.0;
+        float w = fbm(gp + uTime*0.015);
+        float g = fbm(gp + 2.2*vec3(w) + vec3(0.0, uTime*0.02, 0.0));
+        tex *= 1.0 + (g - 0.5) * 2.0 * uGran;
+        // gentle contrast so active regions pop (NASA colorization feel)
+        tex = pow(tex, vec3(1.18));
+        tex *= uBright;
+        // limb treatment
+        float mu = clamp(dot(normalize(vNv), normalize(-vPos)), 0.0, 1.0);
+        float limbD = 1.0 - 0.64*(1.0 - mu);            // physical (HMI)
+        float limbB = 1.0 + 0.25*pow(1.0 - mu, 2.5);    // EUV brighten
+        tex *= mix(limbD, limbB, uEUV);
+        gl_FragColor = vec4(tex, 1.0);
+      }`
+  })
+);
+photosphere.rotation.y = -Math.PI/2; // equirect lon=0 faces the camera (+z)
+scene.add(photosphere);
+
+// ---------------------------------------------------------------- corona
+// shared corona shading: intensity from screen-space distance of the fragment
+// from the sun axis (rho), falling off ~1/r^k, textured with fBm.
+function coronaMaterial(uniforms, fragBody) {
+  return new THREE.ShaderMaterial({
+    uniforms,
+    side: THREE.BackSide,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`
+      varying vec3 vObjN;
+      varying vec3 vNv;
+      varying vec3 vPos;
+      void main(){
+        vObjN = normalize(position);
+        vNv = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vPos = mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: fragBody
+  });
+}
+const CORONA_COMMON = /* glsl */`
+  uniform vec3 uColor;
+  uniform float uTime;
+  varying vec3 vObjN;
+  varying vec3 vNv;
+  varying vec3 vPos;
+  ${NOISE}
+  // rho = apparent distance from sun centre, in sun radii
+  float shellRho(float shellR){
+    float d = abs(dot(normalize(vNv), normalize(-vPos)));
+    return sqrt(1.0 - d*d) * shellR / ${SUN_R.toFixed(2)};
+  }
+`;
+
+const innerCoronaUniforms = { uColor:{ value:new THREE.Color('#ff4411') },
+                              uTime:{ value:0 } };
+const innerCorona = new THREE.Mesh(
+  new THREE.SphereGeometry(2.0, 128, 128),
+  coronaMaterial(innerCoronaUniforms, /* glsl */`
+    ${CORONA_COMMON}
+    void main(){
+      float rho = shellRho(2.0);
+      vec3 n = normalize(vObjN);
+      // corona extent varies with direction -> no uniform "glass ring"
+      float extent = 0.55 + 0.9 * fbm(n * 3.0 + vec3(0.0, uTime*0.025, 0.0));
+      float fall = exp(-max(rho - 1.0, 0.0) * (3.4 + 4.2 * extent));
+      float mask = smoothstep(0.97, 1.03, rho);                // hide on-disk
+      float texn = 0.45 + 1.1 * fbm(n * 9.0 + vec3(0.0, uTime*0.04, 0.0));
+      float I = fall * mask * texn * 0.6;
+      gl_FragColor = vec4(uColor * I, 1.0);
+    }`)
+);
+scene.add(innerCorona);
+
+const outerCoronaUniforms = { uColor:{ value:new THREE.Color('#ff4411') },
+                              uTime:{ value:0 } };
+const outerCorona = new THREE.Mesh(
+  new THREE.SphereGeometry(2.6, 128, 128),
+  coronaMaterial(outerCoronaUniforms, /* glsl */`
+    ${CORONA_COMMON}
+    void main(){
+      float rho = shellRho(2.6);
+      vec3 n = normalize(vObjN);
+      float az = atan(n.z, n.x);
+      float el = asin(clamp(n.y, -1.0, 1.0));
+      // periodic-in-azimuth streak field, slowly evolving
+      vec3 q = vec3(cos(az)*5.0, sin(az)*5.0, el*3.0 + uTime*0.05);
+      float s = fbm(q);
+      s = pow(smoothstep(0.30, 0.95, s), 2.0) * 1.6;
+      s *= 0.30 + 0.70 * cos(el);   // damp the pole pinch singularity
+      // denser near equator, wispier at poles (solar-minimum look)
+      float equator = mix(1.0, 0.45, pow(abs(n.y), 1.4));
+      float fall = pow(1.30 / max(rho, 0.02), 2.2);            // ~1/r^2.2
+      float mask = smoothstep(0.98, 1.25, rho);
+      float I = s * equator * fall * mask * 1.1;
+      gl_FragColor = vec4(uColor * I, 1.0);
+    }`)
+);
+scene.add(outerCorona);
+
+// ---------------------------------------------------------------- prominences
+function flareTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(64,64,0, 64,64,64);
+  grd.addColorStop(0.0,'rgba(255,255,255,1)');
+  grd.addColorStop(0.25,'rgba(255,220,180,0.85)');
+  grd.addColorStop(0.6,'rgba(255,160,90,0.28)');
+  grd.addColorStop(1.0,'rgba(255,120,40,0)');
+  g.fillStyle = grd; g.fillRect(0,0,128,128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const flareTex = flareTexture();
+const prominenceColor = new THREE.Color(MODES['0304'].color);
+const sprites = [];
+for (let i = 0; i < 8; i++) {
+  const m = new THREE.SpriteMaterial({ map:flareTex, color:prominenceColor,
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true });
+  const s = new THREE.Sprite(m);
+  s.userData = { ang: Math.random()*Math.PI*2,
+                 speed: 0.02 + Math.random()*0.05,
+                 pulse: 0.6 + Math.random()*1.4,
+                 phase: Math.random()*Math.PI*2,
+                 size: 0.45 + Math.random()*0.5 };
+  sprites.push(s); scene.add(s);
+}
+// arc prominences hugging the limb (torus plane re-aligned to the view each
+// frame so the arc always sits on the silhouette)
+const arcs = [];
+for (let i = 0; i < 3; i++) {
+  const arcLen = 0.55 + Math.random()*0.5;
+  const geo = new THREE.TorusGeometry(SUN_R*1.07, 0.026, 12, 96, arcLen);
+  const mat = new THREE.MeshBasicMaterial({ color:prominenceColor,
+    transparent:true, opacity:0.75, blending:THREE.AdditiveBlending,
+    depthWrite:false });
+  const t = new THREE.Mesh(geo, mat);
+  t.userData = { phase: Math.random()*Math.PI*2, pulse: 0.5+Math.random(),
+                 ang: Math.random()*Math.PI*2, arc: arcLen,
+                 speed: 0.015 + Math.random()*0.03 };
+  arcs.push(t); scene.add(t);
+}
+
+// ---------------------------------------------------------------- starfield
+const STAR_N = 4000;
+{
+  const pos = new Float32Array(STAR_N*3);
+  const attr = new Float32Array(STAR_N*3); // size, baseAlpha, twinkleSpeed
+  for (let i = 0; i < STAR_N; i++) {
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(90 + Math.random()*60);
+    pos.set([v.x, v.y, v.z], i*3);
+    attr.set([0.6 + Math.random()*1.8, 0.25 + Math.random()*0.65,
+              0.3 + Math.random()*2.0], i*3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aStar', new THREE.BufferAttribute(attr, 3));
+  const m = new THREE.ShaderMaterial({
+    uniforms:{ uTime:{ value:0 } },
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+    vertexShader:/* glsl */`
+      attribute vec3 aStar;
+      uniform float uTime;
+      varying float vA;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        float tw = 0.72 + 0.28*sin(uTime*aStar.z + aStar.x*37.0);
+        vA = aStar.y * tw;
+        gl_PointSize = aStar.x * tw * (160.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader:/* glsl */`
+      varying float vA;
+      void main(){
+        float d = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.05, d) * vA;
+        gl_FragColor = vec4(vec3(0.82, 0.88, 1.0) * a, a);
+      }`
+  });
+  var starfield = new THREE.Points(g, m);
+  scene.add(starfield);
+}
+
+// ---------------------------------------------------------------- textures
+const veil = document.getElementById('veil');
+const fill = document.getElementById('fill');
+const manager = new THREE.LoadingManager();
+manager.onProgress = (u, done, total) => {
+  fill.style.width = Math.round(100*done/total) + '%';
+};
+manager.onLoad = () => setTimeout(() => veil.classList.add('hide'), 250);
+manager.onError = (u) => console.warn('texture failed, using fallback:', u);
+
+function fallbackTexture() { // warm procedural plasma — never a black screen
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#a33808'; g.fillRect(0, 0, 512, 256);
+  for (let i = 0; i < 900; i++) {
+    const x = Math.random()*512, y = Math.random()*256, r = 2+Math.random()*14;
+    const grd = g.createRadialGradient(x, y, 0, x, y, r);
+    const warm = Math.random() > 0.5 ? '255,190,90' : '120,30,5';
+    grd.addColorStop(0, `rgba(${warm},0.25)`); grd.addColorStop(1, `rgba(${warm},0)`);
+    g.fillStyle = grd; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+const texes = {};
+{
+  const loader = new THREE.TextureLoader(manager);
+  for (const key of ORDER) {
+    texes[key] = loader.load(MODES[key].file, undefined, undefined,
+      () => { // swap failed texture's pixels in place (uniforms keep ref)
+        const fb = fallbackTexture();
+        texes[key].image = fb.image;
+        texes[key].needsUpdate = true;
+      });
+    texes[key].colorSpace = THREE.SRGBColorSpace;
+    texes[key].wrapS = THREE.RepeatWrapping;
+  }
+}
+photoUniforms.mapA.value = texes['0304'];
+photoUniforms.mapB.value = texes['0304'];
+
+// ---------------------------------------------------------------- post FX
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight),
+                                  0.7, 0.65, 0.5);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// ---------------------------------------------------------------- UI state
+let currentKey = '0304';
+let fade = null; // {from,to,t0}
+const palTarget = new THREE.Color(MODES['0304'].color);
+const palCurrent = palTarget.clone();
+let euvTarget = 1, granTarget = 0.02, brightTarget = 1.05;
+const legendEl = document.getElementById('legend');
+
+function switchMode(key) {
+  if (key === currentKey && !fade) return;
+  if (fade) { // interrupt: snap current fade to its target first
+    photoUniforms.mapA.value = texes[fade.to];
+    photoUniforms.mixW.value = 0;
+    currentKey = fade.to;
+  }
+  photoUniforms.mapA.value = texes[currentKey];
+  photoUniforms.mapB.value = texes[key];
+  photoUniforms.mixW.value = 0;
+  fade = { to: key, t0: performance.now() };
+  palTarget.set(MODES[key].color);
+  euvTarget = MODES[key].euv;
+  granTarget = MODES[key].euv ? 0.02 : 0.06;
+  brightTarget = MODES[key].euv ? 1.05 : 0.72;
+  legendEl.textContent = MODES[key].legend;
+  document.querySelectorAll('#row button[data-w]').forEach(b =>
+    b.classList.toggle('on', b.dataset.w === key));
+}
+document.querySelectorAll('#row button[data-w]').forEach(b =>
+  b.addEventListener('click', () => switchMode(b.dataset.w)));
+const rotBtn = document.getElementById('rot');
+rotBtn.addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  rotBtn.classList.toggle('on', controls.autoRotate);
+});
+
+// ---------------------------------------------------------------- loop
+const clock = new THREE.Clock();
+const camRight = new THREE.Vector3(), camUp = new THREE.Vector3();
+const camFwd = new THREE.Vector3();
+const qAlign = new THREE.Quaternion(), qSpin = new THREE.Quaternion();
+const ZAXIS = new THREE.Vector3(0, 0, 1);
+
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  // wavelength crossfade (~0.8 s)
+  if (fade) {
+    const k = (performance.now() - fade.t0) / 800;
+    if (k >= 1) {
+      photoUniforms.mapA.value = texes[fade.to];
+      photoUniforms.mixW.value = 0;
+      currentKey = fade.to;
+      fade = null;
+    } else {
+      photoUniforms.mixW.value = k*k*(3-2*k); // smoothstep
+    }
+  }
+  // palette / mode lerps
+  const lp = 1 - Math.exp(-dt*4);
+  palCurrent.lerp(palTarget, lp);
+  innerCoronaUniforms.uColor.value.copy(palCurrent);
+  outerCoronaUniforms.uColor.value.copy(palCurrent).multiplyScalar(0.9);
+  sprites.forEach(s => s.material.color.copy(palCurrent));
+  arcs.forEach(a => a.material.color.copy(palCurrent));
+  photoUniforms.uEUV.value += (euvTarget - photoUniforms.uEUV.value) * lp;
+  photoUniforms.uGran.value += (granTarget - photoUniforms.uGran.value) * lp;
+  photoUniforms.uBright.value += (brightTarget - photoUniforms.uBright.value) * lp;
+
+  // solar rotation: full turn per 60 s (subtle)
+  photosphere.rotation.y += dt * (Math.PI*2/60);
+
+  photoUniforms.uTime.value = t;
+  innerCoronaUniforms.uTime.value = t;
+  outerCoronaUniforms.uTime.value = t;
+  starfield.material.uniforms.uTime.value = t;
+
+  // prominences pinned to the camera limb circle
+  camera.matrixWorld.extractBasis(camRight, camUp, new THREE.Vector3());
+  for (const s of sprites) {
+    const u = s.userData;
+    u.ang += dt * u.speed;
+    const p = camRight.clone().multiplyScalar(Math.cos(u.ang))
+          .addScaledVector(camUp, Math.sin(u.ang)).multiplyScalar(SUN_R*1.04);
+    s.position.copy(p);
+    const pulse = 1 + 0.28*Math.sin(t*u.pulse + u.phase);
+    s.scale.setScalar(u.size * pulse);
+    s.material.opacity = 0.5 + 0.35*Math.sin(t*u.pulse*1.7 + u.phase);
+  }
+  camera.getWorldDirection(camFwd);
+  qAlign.setFromUnitVectors(ZAXIS, camFwd);
+  for (const a of arcs) {
+    const u = a.userData;
+    u.ang += dt * u.speed;
+    qSpin.setFromAxisAngle(ZAXIS, u.ang - u.arc/2);
+    a.quaternion.copy(qAlign).multiply(qSpin);
+    a.material.opacity = 0.45 + 0.3*Math.sin(t*u.pulse + u.phase);
+  }
+
+  controls.update();
+  composer.render();
+}
+tick();
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
