@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "Cite this public archive and the version-specific LSC record used."
+title: "Akasha Chronicles: public LSC research archive"
+type: dataset
+authors:
+  - family-names: "LuciferSun"
+    affiliation: "Independent Research"
+repository-code: "https://github.com/luciferprosun/akasha-chronicles"
+keywords:
+  - LSC
+  - neutrino phenomenology
+  - research archive
+  - model lineage
+abstract: >-
+  Public presentation and download archive for the unvalidated LSC research
+  line and its MHLM/MDLH process study.
